@@ -44,18 +44,9 @@ export default function ReleaseList({ onNavigate, onEdit, user }: ReleaseListPro
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">My Releases</h2>
-          <p className="text-neutral-400 mt-1">Manage your discography and distribution status.</p>
-        </div>
-        <button
-          onClick={() => onNavigate('new-release')}
-          className="bg-emerald-500 hover:bg-emerald-600 text-black font-semibold px-6 py-3 rounded-2xl flex items-center gap-2 transition-all self-start md:self-auto"
-        >
-          <Plus className="w-5 h-5" />
-          Create Release
-        </button>
+      <header>
+        <h2 className="text-3xl font-bold tracking-tight">My Releases</h2>
+        <p className="text-neutral-400 mt-1">Manage your discography and distribution status.</p>
       </header>
 
       {/* Filters & Search */}

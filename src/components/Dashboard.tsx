@@ -40,18 +40,9 @@ export default function Dashboard({ onNavigate, user }: DashboardProps) {
 
   return (
     <div className="space-y-8">
-      <header className="flex justify-between items-end">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user.displayName?.split(' ')[0]}</h2>
-          <p className="text-neutral-400 mt-1">Here's what's happening with your music today.</p>
-        </div>
-        <button
-          onClick={() => onNavigate('new-release')}
-          className="bg-emerald-500 hover:bg-emerald-600 text-black font-semibold px-6 py-3 rounded-2xl flex items-center gap-2 transition-all"
-        >
-          <Plus className="w-5 h-5" />
-          New Release
-        </button>
+      <header>
+        <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user.displayName?.split(' ')[0]}</h2>
+        <p className="text-neutral-400 mt-1">Here's what's happening with your music today.</p>
       </header>
 
       {/* Stats Grid */}
