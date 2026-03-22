@@ -1,0 +1,144 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: artists
+    // Document ID: artistId (UID)
+    // Fields:
+    //   - uid: string (required) - The Firebase Auth UID
+    //   - name: string (required) - The stage name
+    //   - bio: string (optional) - A short biography
+    //   - profileImageUrl: string (optional) - URL to profile image
+    //   - createdAt: timestamp (required) - When the profile was created
+    //
+    // Collection: releases
+    // Document ID: releaseId
+    // Fields:
+    //   - artistId: string (required) - The UID of the artist
+    //   - title: string (required) - The title of the release
+    //   - type: string (required) - Enum: single, ep, album
+    //   - genre: string (optional) - The primary genre
+    //   - releaseDate: timestamp (optional) - The scheduled release date
+    //   - coverImageUrl: string (optional) - URL to cover artwork
+    //   - status: string (required) - Enum: draft, pending, distributed, rejected
+    //   - createdAt: timestamp (required) - When the release was created
+    //
+    // Collection: releases/{releaseId}/tracks
+    // Document ID: trackId
+    // Fields:
+    //   - releaseId: string (required) - The ID of the release
+    //   - title: string (required) - The title of the track
+    //   - audioUrl: string (required) - URL to the audio file
+    //   - isrc: string (optional) - International Standard Recording Code
+    //   - duration: number (optional) - Duration in seconds
+    //   - order: int (optional) - The track number
+    //
+    // Collection: analytics
+    // Document ID: analyticsId
+    // Fields:
+    //   - artistId: string (required) - The UID of the artist
+    //   - date: string (required) - The date of the analytics data
+    //   - streams: int (required) - Number of streams
+    //   - revenue: number (optional) - Estimated revenue
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.artistId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "cedit033@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidArtist(data) {
+      return data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             (!('bio' in data) || (data.bio is string && data.bio.size() < 1000)) &&
+             (!('profileImageUrl' in data) || isValidUrl(data.profileImageUrl));
+    }
+
+    function isValidRelease(data) {
+      return data.artistId == request.auth.uid &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.type in ['single', 'ep', 'album'] &&
+             data.status in ['draft', 'pending', 'distributed', 'rejected'] &&
+             (!('coverImageUrl' in data) || isValidUrl(data.coverImageUrl));
+    }
+
+    function isValidTrack(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             isValidUrl(data.audioUrl);
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+
+    match /artists/{artistId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(artistId) && isValidArtist(request.resource.data);
+      allow update: if isOwner(artistId) && isValidArtist(request.resource.data) && 
+                      request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(artistId);
+    }
+
+    match /releases/{releaseId} {
+      allow read: if isAuthenticated() && (resource.data.artistId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidRelease(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.artistId == request.auth.uid || isAdmin()) && 
+                      isValidRelease(request.resource.data) &&
+                      request.resource.data.artistId == resource.data.artistId;
+      allow delete: if isAuthenticated() && (resource.data.artistId == request.auth.uid || isAdmin());
+
+      match /tracks/{trackId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && isValidTrack(request.resource.data);
+        allow update: if isAuthenticated() && isValidTrack(request.resource.data);
+        allow delete: if isAuthenticated();
+      }
+    }
+
+    match /analytics/{analyticsId} {
+      allow read: if isAuthenticated() && (resource.data.artistId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+}

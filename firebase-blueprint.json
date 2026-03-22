@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "Artist": {
+      "title": "Artist",
+      "description": "Represents an artist profile on the platform.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The Firebase Auth UID of the artist." },
+        "name": { "type": "string", "description": "The stage name of the artist." },
+        "bio": { "type": "string", "description": "A short biography of the artist." },
+        "profileImageUrl": { "type": "string", "format": "url", "description": "URL to the artist's profile image." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the profile was created." }
+      },
+      "required": ["uid", "name"]
+    },
+    "Release": {
+      "title": "Release",
+      "description": "Represents a music release (album, EP, or single).",
+      "type": "object",
+      "properties": {
+        "artistId": { "type": "string", "description": "The UID of the artist who owns this release." },
+        "title": { "type": "string", "description": "The title of the release." },
+        "type": { "type": "string", "enum": ["single", "ep", "album"], "description": "The type of release." },
+        "genre": { "type": "string", "description": "The primary genre of the release." },
+        "releaseDate": { "type": "string", "format": "date", "description": "The scheduled release date." },
+        "coverImageUrl": { "type": "string", "format": "url", "description": "URL to the cover artwork." },
+        "status": { "type": "string", "enum": ["draft", "pending", "distributed", "rejected"], "description": "The current status of the release." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the release was created." }
+      },
+      "required": ["artistId", "title", "type", "status"]
+    },
+    "Track": {
+      "title": "Track",
+      "description": "Represents an individual song within a release.",
+      "type": "object",
+      "properties": {
+        "releaseId": { "type": "string", "description": "The ID of the release this track belongs to." },
+        "title": { "type": "string", "description": "The title of the track." },
+        "audioUrl": { "type": "string", "format": "url", "description": "URL to the audio file." },
+        "isrc": { "type": "string", "description": "International Standard Recording Code." },
+        "duration": { "type": "number", "description": "Duration in seconds." },
+        "order": { "type": "integer", "description": "The track number in the release." }
+      },
+      "required": ["releaseId", "title", "audioUrl"]
+    },
+    "Analytics": {
+      "title": "Analytics",
+      "description": "Daily streaming analytics for an artist.",
+      "type": "object",
+      "properties": {
+        "artistId": { "type": "string", "description": "The UID of the artist." },
+        "date": { "type": "string", "format": "date", "description": "The date of the analytics data." },
+        "streams": { "type": "integer", "description": "Number of streams on this date." },
+        "revenue": { "type": "number", "description": "Estimated revenue generated on this date." }
+      },
+      "required": ["artistId", "date", "streams"]
+    }
+  },
+  "firestore": {
+    "/artists/{artistId}": {
+      "schema": "Artist",
+      "description": "Artist profile documents."
+    },
+    "/releases/{releaseId}": {
+      "schema": "Release",
+      "description": "Music release documents."
+    },
+    "/releases/{releaseId}/tracks/{trackId}": {
+      "schema": "Track",
+      "description": "Tracks within a specific release."
+    },
+    "/analytics/{analyticsId}": {
+      "schema": "Analytics",
+      "description": "Daily analytics records."
+    }
+  }
+}
